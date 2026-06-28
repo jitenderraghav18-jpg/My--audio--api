@@ -4,23 +4,23 @@ const app = express();
 
 app.use(express.json());
 
-// ElevenLabs Configuration with your key
+// Sahi backend configurations aur aapki API key
 const ELEVENLABS_API_KEY = "22f8ffca0012d0011389e7b56d9c6e864b7f80c50b39eb3a8a43e0bbaffc59d1"; 
 
-// Only Premium Hindi Male Voices (Top Choices)
+// Sirf top professional Hindi Male Voice models
 const hindiMaleVoices = [
-  { id: 'cgSgspJ2msm6clMCmAQX', name: 'Bunty (ElevenLabs Premium Male - Energetic & Natural)' },
+  { id: 'cgSgspJ2msm6clMCmAQX', name: 'Bunty (ElevenLabs Premium Male - Energetic)' },
   { id: 'N2lVS1w4EtoT3gGZ7S8d', name: 'Prem (Deep Voice Narrator Male)' },
   { id: 'ErXwobaYiN019PkySvjV', name: 'Naman (Professional News/Promo Male)' },
   { id: 'pNInz6obpgfr9ff09S7M', name: 'Kabir (Standard Clear Hindi Male)' }
 ];
 
-// Backend API Route
+// Backend API Route handled for Vercel Serverless stability
 app.post('/api/generate-voice', async (req, res) => {
     const { text, voiceId, stability, similarityBoost } = req.body;
 
     if (!text) {
-        return res.status(400).json({ error: 'Bhai, script text zaroori hai!' });
+        return res.status(400).json({ error: 'Bhai, script text likhna zaroori hai!' });
     }
 
     try {
@@ -28,31 +28,37 @@ app.post('/api/generate-voice', async (req, res) => {
             method: 'post',
             url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId || 'cgSgspJ2msm6clMCmAQX'}`,
             headers: {
-                'accept': 'audio/mpeg',
                 'xi-api-key': ELEVENLABS_API_KEY,
-                'content-type': 'application/json'
+                'content-type': 'application/json',
+                'accept': 'audio/mpeg'
             },
             data: {
                 text: text,
-                model_id: "eleven_multilingual_v2", // Best model for proper Hindi pronunciation
+                model_id: "eleven_multilingual_v2", // Flawless Hindi pronunciation
                 voice_settings: {
                     stability: parseFloat(stability) / 100 || 0.5,
                     similarity_boost: parseFloat(similarityBoost) / 100 || 0.75
                 }
             },
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer' // Handling binary streams smoothly
         });
 
-        res.set('Content-Type', 'audio/mpeg');
-        res.send(response.data);
+        // Convert chunk buffer to send clean stream over Vercel
+        const audioBuffer = Buffer.from(response.data);
+        
+        res.writeHead(200, {
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': audioBuffer.length
+        });
+        return res.end(audioBuffer);
 
     } catch (error) {
-        console.error("ElevenLabs Error:", error.response ? error.response.data.toString() : error.message);
-        res.status(500).json({ error: 'API Error: Audio generate nahi ho paya.' });
+        console.error("ElevenLabs Engine Error:", error.message);
+        return res.status(500).json({ error: 'ElevenLabs connectivity crash framework handler activated.' });
     }
 });
 
-// Frontend UI
+// UI Panel code
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -100,11 +106,11 @@ app.get('/', (req, res) => {
             
             <div class="form-group">
                 <label>Hindi Script</label>
-                <textarea id="scriptInput">Bhai, ab ElevenLabs ka premium engine connect ho chuka hai. Jo bhi likhoge, bilkul original aur professional voice me generate hoga!</textarea>
+                <textarea id="scriptInput">Bhai, ab ElevenLabs ka premium engine connect ho chuka hai. Jo bhi likhoge, ekdum professional aawaz me aayega!</textarea>
             </div>
             
             <div class="form-group">
-                <label>Premium Male Voice (Sirf Hindi)</label>
+                <label>Premium Male Voice (Only Hindi)</label>
                 <select id="voiceModel">
                     ${hindiMaleVoices.map(v => `<option value="${v.id}">${v.name}</option>`).join('')}
                 </select>
@@ -113,6 +119,74 @@ app.get('/', (req, res) => {
             <div class="form-group">
                 <div class="slider-header">
                     <label>Stability (Expression Control)</label>
+                    <span class="slider-value" id="stabilityVal">50%</span>
+                </div>
+                <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
+            </div>
+            
+            <div class="form-group">
+                <div class="slider-header">
+                    <label>Clarity / Similarity Boost</label>
+                    <span class="slider-value" id="similarityVal">75%</span>
+                </div>
+                <input type="range" id="similaritySlider" min="0" max="100" value="75" oninput="document.getElementById('similarityVal').innerText = this.value + '%'">
+            </div>
+            
+            <button id="submitBtn" onclick="generateElevenLabsAudio()">Generate Professional Audio</button>
+            
+            <div class="audio-box" id="audioPlaybackBlock">
+                <label style="color: #b380ff; display:block; text-align:left; margin-bottom: 5px;">Generated Track</label>
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </div>
+
+        <script>
+            async function generateElevenLabsAudio() {
+                const text = document.getElementById('scriptInput').value.trim();
+                const voiceId = document.getElementById('voiceModel').value;
+                const stability = document.getElementById('stabilitySlider').value;
+                const similarityBoost = document.getElementById('similaritySlider').value;
+
+                if(!text) { alert('Bhai, text khali hai!'); return; }
+
+                const btn = document.getElementById('submitBtn');
+                const audioBlock = document.getElementById('audioPlaybackBlock');
+                const player = document.getElementById('audioPlayer');
+
+                btn.disabled = true;
+                btn.innerText = 'Generating Audio Track...';
+
+                try {
+                    const response = await fetch('/api/generate-voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, voiceId, stability, similarityBoost })
+                    });
+
+                    if(!response.ok) { throw new Error('Generation Error'); }
+
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    
+                    player.src = audioUrl;
+                    audioBlock.style.display = 'block';
+                    player.play();
+
+                } catch(e) {
+                    alert('Audio generation failed. Vercel deployment update check karein!');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Generate Professional Audio';
+                }
+            }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));                    <label>Stability (Expression Control)</label>
                     <span class="slider-value" id="stabilityVal">50%</span>
                 </div>
                 <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
