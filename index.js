@@ -4,7 +4,7 @@ const app = express();
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
-    <html lang="hi">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-                background-color: #131224; 
+                background: radial-gradient(circle at top, #1a1738 0%, #0d0b18 100%);
                 color: #ffffff; 
                 display: flex; 
                 justify-content: center; 
@@ -23,139 +23,145 @@ app.get('/', (req, res) => {
                 box-sizing: border-box;
             }
             .container { 
-                background-color: #1e1b3a; 
+                background: rgba(30, 27, 58, 0.75);
+                backdrop-filter: blur(12px);
                 width: 100%; 
-                max-width: 440px; 
-                border-radius: 16px; 
+                max-width: 420px; 
+                border-radius: 24px; 
                 padding: 32px 24px; 
-                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.05);
                 box-sizing: border-box;
             }
             h1 { 
-                font-size: 28px; 
+                font-size: 26px; 
                 font-weight: 700; 
                 text-align: center; 
-                margin: 0 0 4px 0;
-                background: linear-gradient(90deg, #4da1ff, #a67cff);
+                margin: 0 0 6px 0;
+                background: linear-gradient(135deg, #5099ff, #bc78ff);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
+                letter-spacing: -0.5px;
             }
             .subtitle { 
-                font-size: 13px; 
-                color: #8b89a8; 
+                font-size: 12px; 
+                color: #79769e; 
                 text-align: center; 
                 margin-bottom: 28px; 
             }
             .form-group {
-                margin-bottom: 20px;
+                margin-bottom: 22px;
             }
             label { 
-                font-size: 11px; 
-                font-weight: 600; 
-                color: #a3a1cc; 
+                font-size: 10px; 
+                font-weight: 700; 
+                color: #8885b3; 
                 text-transform: uppercase; 
-                letter-spacing: 0.5px; 
+                letter-spacing: 1px; 
                 display: block; 
                 margin-bottom: 8px; 
             }
             textarea { 
                 width: 100%; 
-                height: 90px; 
-                background-color: #141226; 
-                border: 1px solid #2e2a57; 
-                border-radius: 8px; 
+                height: 100px; 
+                background-color: rgba(13, 11, 24, 0.6); 
+                border: 1px solid rgba(255, 255, 255, 0.08); 
+                border-radius: 12px; 
                 color: #ffffff; 
-                padding: 12px; 
+                padding: 14px; 
                 font-size: 13px; 
                 box-sizing: border-box; 
                 resize: none;
-                line-height: 1.5;
+                line-height: 1.6;
+                transition: border 0.2s;
             }
             textarea:focus {
-                border-color: #7c4dff;
+                border-color: #9256ff;
                 outline: none;
             }
             select { 
                 width: 100%; 
-                background-color: #141226; 
-                border: 1px solid #2e2a57; 
-                border-radius: 8px; 
+                background-color: rgba(13, 11, 24, 0.6); 
+                border: 1px solid rgba(255, 255, 255, 0.08); 
+                border-radius: 12px; 
                 color: #ffffff; 
-                padding: 12px; 
+                padding: 14px; 
                 font-size: 13px; 
                 box-sizing: border-box;
                 cursor: pointer;
-            }
-            select:focus {
-                border-color: #7c4dff;
-                outline: none;
+                appearance: none;
             }
             .slider-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 6px;
+                margin-bottom: 8px;
             }
             .slider-header label {
                 margin-bottom: 0;
             }
             .slider-value {
                 font-size: 12px;
-                color: #a67cff;
+                color: #b380ff;
                 font-weight: 600;
             }
             input[type=range] { 
                 width: 100%; 
-                accent-color: #a67cff; 
-                background: #2e2a57; 
-                height: 4px; 
-                border-radius: 4px; 
+                accent-color: #9256ff; 
+                background: #252142; 
+                height: 5px; 
+                border-radius: 10px; 
                 appearance: none; 
                 cursor: pointer;
-                margin: 4px 0;
+                margin: 6px 0;
             }
             .slider-subtexts {
                 display: flex;
                 justify-content: space-between;
                 font-size: 9px;
-                color: #6d6b8a;
+                color: #58557a;
                 text-transform: uppercase;
-                margin-top: 2px;
+                margin-top: 4px;
                 font-weight: 600;
+                letter-spacing: 0.5px;
             }
             button { 
                 width: 100%; 
-                padding: 14px; 
+                padding: 15px; 
                 background: linear-gradient(90deg, #6c5ce7, #a36bf5); 
                 color: white; 
                 border: none; 
-                border-radius: 8px; 
+                border-radius: 12px; 
                 font-size: 14px; 
                 font-weight: 600; 
                 cursor: pointer; 
-                margin-top: 12px;
-                transition: opacity 0.2s;
+                margin-top: 10px;
+                box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+                transition: all 0.2s;
             }
             button:hover { 
-                opacity: 0.9;
+                opacity: 0.95;
+                transform: translateY(-1px);
             }
             button:disabled { 
-                background: #3a375c; 
-                color: #716f94;
+                background: #252244; 
+                color: #535175;
                 cursor: not-allowed; 
+                box-shadow: none;
+                transform: none;
             }
             .audio-box { 
-                margin-top: 20px; 
-                background-color: #141226; 
-                padding: 12px; 
-                border-radius: 10px; 
-                border: 1px solid #2e2a57; 
+                margin-top: 24px; 
+                background-color: rgba(13, 11, 24, 0.8); 
+                padding: 16px; 
+                border-radius: 14px; 
+                border: 1px solid rgba(255, 255, 255, 0.05); 
                 display: none; 
             }
             audio { 
                 width: 100%; 
-                height: 36px;
-                accent-color: #a67cff;
+                height: 40px;
+                margin-top: 8px;
             }
         </style>
     </head>
@@ -166,7 +172,7 @@ app.get('/', (req, res) => {
             
             <div class="form-group">
                 <label>Script</label>
-                <textarea id="scriptInput" placeholder="Yahan apna text likhein...">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar, khush aur oorja se bharpoor honge!</textarea>
+                <textarea id="scriptInput" placeholder="Yahan apna script text enter karein...">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar, khush aur oorja se bharpoor honge!</textarea>
             </div>
             
             <div class="form-group">
@@ -214,19 +220,19 @@ app.get('/', (req, res) => {
                 </div>
             </div>
             
-            <button id="submitBtn" onclick="processNeuralAudio()">Generate Audio</button>
+            <button id="submitBtn" onclick="generateNeuralAudio()">Generate Audio</button>
             
             <div class="audio-box" id="audioPlaybackBlock">
-                <label style="color: #a67cff; margin-bottom: 6px;">Generated Audio Track</label>
+                <label style="color: #b380ff;">Generated Master Track</label>
                 <audio id="coreAudioPlayer" controls></audio>
             </div>
         </div>
 
         <script>
-            function processNeuralAudio() {
+            function generateNeuralAudio() {
                 const text = document.getElementById('scriptInput').value.trim();
                 if(!text) { 
-                    alert('Bhai, please text box mein kuch script enter karo!'); 
+                    alert('Bhai, text box khali hai! Kuch type toh karo.'); 
                     return; 
                 }
                 
@@ -240,8 +246,8 @@ app.get('/', (req, res) => {
                 const modelSelection = document.getElementById('voiceModel').value;
                 const speedRate = document.getElementById('speedSlider').value / 100;
                 
-                // Google TTS engine backend simulation for standalone playback
                 let langCode = modelSelection.includes('en') ? 'en' : 'hi';
+                // Direct high-speed endpoint mapping bypasses Vercel 10s Serverless limitation completely
                 const audioUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=' + langCode + '&client=tw-ob&q=' + encodeURIComponent(text);
                 
                 player.src = audioUrl;
@@ -258,7 +264,7 @@ app.get('/', (req, res) => {
                 };
 
                 player.onerror = function() {
-                    alert('Audio generate karne mein dikkat aayi, dobara try karein.');
+                    alert('Audio build error. Ek baar text chota karke check karein!');
                     btn.disabled = false;
                     btn.innerText = 'Generate Audio';
                 };
@@ -269,64 +275,9 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Vercel Serverless handle engine export
 module.exports = app;
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-                player.onerror = function() {
-                    alert('Audio load hone me thodi dikkat hui, dobara Generate par click karein!');
-                    btn.disabled = false;
-                    btn.innerText = 'Generate Audio';
-                };
-            }
-        </script>
-    </body>
-    </html>
-  `);
-});
-
-// Vercel serverless environment support ke liye export kiya
-module.exports = app;
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});                    player.play();
-                    btn.disabled = false;
-                    btn.innerText = 'Generate Audio';
-                };
-
-                player.onerror = function() {
-                    alert('Audio load hone me thodi dikkat hui, dobara Generate par click karein!');
-                    btn.disabled = false;
-                    btn.innerText = 'Generate Audio';
-                };
-            }
-        </script>
-    </body>
-    </html>
-  `);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});                };
-
-                player.onerror = function() {
-                    alert('Audio generate karne mein dikkat aayi, dobara try karein.');
-                    btn.disabled = false;
-                    btn.innerText = 'Generate Audio';
-                };
-            }
-        </script>
-    </body>
-    </html>
-  `);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is active on port ${PORT}`);
 });
