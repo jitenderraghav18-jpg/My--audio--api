@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
   res.send(`
@@ -49,7 +48,7 @@ app.get('/', (req, res) => {
             </select>
             
             <div class="slider-group">
-                <div class="slider-header"><span>STABILITY & PITCH (TONE)</span><span class="val" id="pitchVal">Medium</span></div>
+                <div class="slider-header"><span>STABILITY & PITCH (TONE)</span><span class="val" id="pitchVal">Balanced</span></div>
                 <input type="range" id="pitchSlider" min="1" max="3" value="2" oninput="updatePitchLabel(this.value)">
                 <div class="slider-labels"><span>Deep Heavy Male</span><span>Balanced</span><span>Expressive Female / High</span></div>
             </div>
@@ -91,28 +90,48 @@ app.get('/', (req, res) => {
                 const speed = document.getElementById('speedSlider').value / 100;
                 const pitchMode = document.getElementById('pitchSlider').value;
                 
-                // Using 100% reliable public streaming translation endpoints
                 const encodedText = encodeURIComponent(text);
                 let streamUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=' + lang + '&client=tw-ob&q=' + encodedText;
                 
                 player.src = streamUrl;
                 audioBox.style.display = 'block';
                 
-                // Real-time audio pitch transformation modification using web audio manipulation context
                 player.defaultPlaybackRate = speed;
                 player.playbackRate = speed;
                 
-                // Modifying audio node pitch via playback rate scaling for instant live results
                 if(pitchMode == "1") {
-                    player.playbackRate = speed * 0.82; // Pitch gets deeper (Heavy Male)
+                    player.playbackRate = speed * 0.82;
                 } else if(pitchMode == "3") {
-                    player.playbackRate = speed * 1.25; // Pitch gets higher (Female Tone)
+                    player.playbackRate = speed * 1.25;
                 }
 
                 player.load();
                 
                 player.oncanplaythrough = function() {
                     player.play();
+                    btn.disabled = false;
+                    btn.innerText = 'Generate Audio';
+                };
+
+                player.onerror = function() {
+                    alert('Audio load hone me thodi dikkat hui, dobara Generate par click karein!');
+                    btn.disabled = false;
+                    btn.innerText = 'Generate Audio';
+                };
+            }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
+// Vercel serverless environment support ke liye export kiya
+module.exports = app;
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});                    player.play();
                     btn.disabled = false;
                     btn.innerText = 'Generate Audio';
                 };
