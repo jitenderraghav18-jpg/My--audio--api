@@ -3,6 +3,7 @@ const app = express();
 
 app.use(express.json());
 
+// ElevenLabs API Key
 const ELEVENLABS_API_KEY = "22f8ffca0012d0011389e7b56d9c6e864b7f80c50b39eb3a8a43e0bbaffc59d1"; 
 
 const hindiMaleVoices = [
@@ -12,7 +13,7 @@ const hindiMaleVoices = [
   { id: 'pNInz6obpgfr9ff09S7M', name: 'Kabir (Standard Clear Hindi Male)' }
 ];
 
-// Backend Route using Node's Native Fetch
+// Backend Route
 app.post('/api/generate-voice', async (req, res) => {
     const { text, voiceId, stability, similarityBoost } = req.body;
 
@@ -40,12 +41,12 @@ app.post('/api/generate-voice', async (req, res) => {
         });
 
         if (!response.ok) {
-            const errText = await response.text();
-            console.error("ElevenLabs API Error Status:", response.status, errText);
-            return res.status(response.status).json({ error: 'ElevenLabs API returned an error.' });
+            const errData = await response.json().catch(() => ({}));
+            const errMsg = errData.detail?.status || errData.detail?.message || 'ElevenLabs Error';
+            console.error("ElevenLabs API Error:", errMsg);
+            return res.status(response.status).json({ error: errMsg });
         }
 
-        // Handle binary audio stream safely via arrayBuffer
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = Buffer.from(arrayBuffer);
 
@@ -55,11 +56,11 @@ app.post('/api/generate-voice', async (req, res) => {
 
     } catch (error) {
         console.error("Server Crash Caught:", error.message);
-        return res.status(500).json({ error: 'Internal pipeline error.' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// UI Panel
+// UI Panel with Speed Control & Error Debugging
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -113,6 +114,98 @@ app.get('/', (req, res) => {
                 <div class="slider-header">
                     <label>Stability (Expression)</label>
                     <span class="slider-value" id="stabilityVal">50%</span>
+                </div>
+                <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
+            </div>
+            
+            <div class="form-group">
+                <div class="slider-header">
+                    <label>Clarity / Similarity Boost</label>
+                    <span class="slider-value" id="similarityVal">75%</span>
+                </div>
+                <input type="range" id="similaritySlider" min="0" max="100" value="75" oninput="document.getElementById('similarityVal').innerText = this.value + '%'">
+            </div>
+
+            <!-- Added Voice Speed Option -->
+            <div class="form-group">
+                <div class="slider-header">
+                    <label>Voice Speed (Playback Rate)</label>
+                    <span class="slider-value" id="speedVal">1.0x</span>
+                </div>
+                <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateSpeed(this.value)">
+            </div>
+            
+            <button id="submitBtn" onclick="generateElevenLabsAudio()">Generate Professional Audio</button>
+            
+            <div class="audio-box" id="audioPlaybackBlock">
+                <label style="color: #b380ff; display:block; text-align:left; margin-bottom: 5px;">Generated Track</label>
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </div>
+
+        <script>
+            // Live Speed Change Handler
+            function updateSpeed(val) {
+                document.getElementById('speedVal').innerText = val + 'x';
+                const player = document.getElementById('audioPlayer');
+                if(player) {
+                    player.playbackRate = parseFloat(val);
+                }
+            }
+
+            async function generateElevenLabsAudio() {
+                const text = document.getElementById('scriptInput').value.trim();
+                const voiceId = document.getElementById('voiceModel').value;
+                const stability = document.getElementById('stabilitySlider').value;
+                const similarityBoost = document.getElementById('similaritySlider').value;
+                const speed = document.getElementById('speedSlider').value;
+
+                if(!text) { alert('Bhai, text khali hai!'); return; }
+
+                const btn = document.getElementById('submitBtn');
+                const audioBlock = document.getElementById('audioPlaybackBlock');
+                const player = document.getElementById('audioPlayer');
+
+                btn.disabled = true;
+                btn.innerText = 'Generating Audio Track...';
+
+                try {
+                    const response = await fetch('/api/generate-voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, voiceId, stability, similarityBoost })
+                    });
+
+                    if(!response.ok) { 
+                        const errJson = await response.json().catch(() => ({}));
+                        throw new Error(errJson.error || 'Server rejected request');
+                    }
+
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    
+                    player.src = audioUrl;
+                    audioBlock.style.display = 'block';
+                    
+                    // Apply speed immediately after track loads
+                    player.defaultPlaybackRate = parseFloat(speed);
+                    player.playbackRate = parseFloat(speed);
+                    player.play();
+
+                } catch(e) {
+                    alert('Error: ' + e.message + '\\n\\n(Tip: Check if ElevenLabs Key quota is active/valid)');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Generate Professional Audio';
+                }
+            }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
+module.exports = app;                    <span class="slider-value" id="stabilityVal">50%</span>
                 </div>
                 <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
             </div>
