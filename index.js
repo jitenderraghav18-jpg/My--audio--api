@@ -2,26 +2,28 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Aapka Audio Data
-const audioTracks = [
-  {
-    id: 1,
-    title: "Trending Reel BGM",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-  },
-  {
-    id: 2,
-    title: "Kinetic Typography Beat",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-  }
-];
-
 app.get('/', (req, res) => {
-  res.send('Welcome to my Audio API!');
+  res.send('Welcome to my Automatic Voice Generator API! Use /api/voice?text=hello');
 });
 
-app.get('/api/audio', (req, res) => {
-  res.json(audioTracks);
+// Yeh endpoint dynamic voice generate karega
+app.get('/api/voice', (req, res) => {
+  const text = req.query.text;
+  
+  if (!text) {
+    return res.status(400).json({ error: "Please provide a 'text' query parameter. Example: /api/voice?text=Hello" });
+  }
+
+  // Google Text-to-Speech ka free link automatic generate hoga
+  const encodedText = encodeURIComponent(text);
+  const voiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=hi&client=tw-ob&q=${encodedText}`;
+
+  // Direct MP3 voice file ya json return karega
+  res.json({
+    success: true,
+    text_spoken: text,
+    audio_url: voiceUrl
+  });
 });
 
 app.listen(PORT, () => {
