@@ -3,64 +3,7 @@ const app = express();
 
 app.use(express.json());
 
-// ElevenLabs API Key
-const ELEVENLABS_API_KEY = "22f8ffca0012d0011389e7b56d9c6e864b7f80c50b39eb3a8a43e0bbaffc59d1"; 
-
-const hindiMaleVoices = [
-  { id: 'cgSgspJ2msm6clMCmAQX', name: 'Bunty (ElevenLabs Premium Male - Energetic)' },
-  { id: 'N2lVS1w4EtoT3gGZ7S8d', name: 'Prem (Deep Voice Narrator Male)' },
-  { id: 'ErXwobaYiN019PkySvjV', name: 'Naman (Professional News/Promo Male)' },
-  { id: 'pNInz6obpgfr9ff09S7M', name: 'Kabir (Standard Clear Hindi Male)' }
-];
-
-// Backend Route
-app.post('/api/generate-voice', async (req, res) => {
-    const { text, voiceId, stability, similarityBoost } = req.body;
-
-    if (!text) {
-        return res.status(400).json({ error: 'Bhai, script text likhna zaroori hai!' });
-    }
-
-    try {
-        const targetVoice = voiceId || 'cgSgspJ2msm6clMCmAQX';
-        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${targetVoice}`, {
-            method: 'POST',
-            headers: {
-                'xi-api-key': ELEVENLABS_API_KEY,
-                'content-type': 'application/json',
-                'accept': 'audio/mpeg'
-            },
-            body: JSON.stringify({
-                text: text,
-                model_id: "eleven_multilingual_v2",
-                voice_settings: {
-                    stability: parseFloat(stability) / 100 || 0.5,
-                    similarity_boost: parseFloat(similarityBoost) / 100 || 0.75
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            const errMsg = errData.detail?.status || errData.detail?.message || 'ElevenLabs Error';
-            console.error("ElevenLabs API Error:", errMsg);
-            return res.status(response.status).json({ error: errMsg });
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = Buffer.from(arrayBuffer);
-
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Length', audioBuffer.length);
-        return res.send(audioBuffer);
-
-    } catch (error) {
-        console.error("Server Crash Caught:", error.message);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-// UI Panel with Speed Control & Error Debugging
+// Main HTML Page - Jo direct user ke browser pe load hoga
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -68,7 +11,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Neural Voice Studio Pro - ElevenLabs</title>
+        <title>Neural Voice Studio Pro</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -96,23 +39,130 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <h1>Neural Voice Studio Pro</h1>
-            <div class="subtitle">ElevenLabs Premium Hindi Multilingual V2</div>
+            <div class="subtitle">ElevenLabs Direct Premium Interface</div>
             
             <div class="form-group">
                 <label>Hindi Script</label>
-                <textarea id="scriptInput">Bhai, ab ElevenLabs ka premium engine connect ho chuka hai. Jo bhi likhoge, ekdum mast professional voice me aayega!</textarea>
+                <textarea id="scriptInput">Bhai, ab koi server error nahi aayega. Direct browser se ElevenLabs connect kar diya hai!</textarea>
             </div>
             
             <div class="form-group">
                 <label>Premium Male Voice (Only Hindi)</label>
                 <select id="voiceModel">
-                    ${hindiMaleVoices.map(v => `<option value="${v.id}">${v.name}</option>`).join('')}
+                    <option value="cgSgspJ2msm6clMCmAQX">Bunty (Premium Male - Best Performance)</option>
+                    <option value="N2lVS1w4EtoT3gGZ7S8d">Prem (Deep Voice Narrator)</option>
+                    <option value="ErXwobaYiN019PkySvjV">Naman (Professional News/Promo)</option>
+                    <option value="pNInz6obpgfr9ff09S7M">Kabir (Standard Clear Hindi)</option>
                 </select>
             </div>
             
             <div class="form-group">
                 <div class="slider-header">
-                    <label>Stability (Expression)</label>
+                    <label>Stability (Expression Control)</label>
+                    <span class="slider-value" id="stabilityVal">50%</span>
+                </div>
+                <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
+            </div>
+            
+            <div class="form-group">
+                <div class="slider-header">
+                    <label>Clarity / Similarity Boost</label>
+                    <span class="slider-value" id="similarityVal">75%</span>
+                </div>
+                <input type="range" id="similaritySlider" min="0" max="100" value="75" oninput="document.getElementById('similarityVal').innerText = this.value + '%'">
+            </div>
+
+            <div class="form-group">
+                <div class="slider-header">
+                    <label>Voice Speed</label>
+                    <span class="slider-value" id="speedVal">1.0x</span>
+                </div>
+                <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateSpeed(this.value)">
+            </div>
+            
+            <button id="submitBtn" onclick="generateAudioDirect()">Generate Professional Audio</button>
+            
+            <div class="audio-box" id="audioPlaybackBlock">
+                <label style="color: #b380ff; display:block; text-align:left; margin-bottom: 5px;">Generated Track</label>
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </div>
+
+        <script>
+            // Tumhari API Key direct browser script me embed kar di hai
+            const API_KEY = "22f8ffca0012d0011389e7b56d9c6e864b7f80c50b39eb3a8a43e0bbaffc59d1";
+
+            function updateSpeed(val) {
+                document.getElementById('speedVal').innerText = val + 'x';
+                const player = document.getElementById('audioPlayer');
+                if(player) player.playbackRate = parseFloat(val);
+            }
+
+            async function generateAudioDirect() {
+                const text = document.getElementById('scriptInput').value.trim();
+                const voiceId = document.getElementById('voiceModel').value;
+                const stability = document.getElementById('stabilitySlider').value;
+                const similarityBoost = document.getElementById('similaritySlider').value;
+                const speed = document.getElementById('speedSlider').value;
+
+                if(!text) { alert('Bhai, text khali hai!'); return; }
+
+                const btn = document.getElementById('submitBtn');
+                const audioBlock = document.getElementById('audioPlaybackBlock');
+                const player = document.getElementById('audioPlayer');
+
+                btn.disabled = true;
+                btn.innerText = 'Connecting ElevenLabs API...';
+
+                try {
+                    // Direct API Call to ElevenLabs (Bypassing Vercel fully)
+                    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + voiceId, {
+                        method: 'POST',
+                        headers: {
+                            'xi-api-key': API_KEY,
+                            'Content-Type': 'application/json',
+                            'accept': 'audio/mpeg'
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            model_id: "eleven_multilingual_v2",
+                            voice_settings: {
+                                stability: parseFloat(stability) / 100,
+                                similarity_boost: parseFloat(similarityBoost) / 100
+                            }
+                        })
+                    });
+
+                    if(!response.ok) {
+                        const errText = await response.text();
+                        throw new Error('API Error: Code ' + response.status + ' - Iska matlab key ka limit khatam ya invalid hai.');
+                    }
+
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    
+                    player.src = audioUrl;
+                    audioBlock.style.display = 'block';
+                    
+                    player.defaultPlaybackRate = parseFloat(speed);
+                    player.playbackRate = parseFloat(speed);
+                    player.play();
+
+                } catch(e) {
+                    alert(e.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = 'Generate Professional Audio';
+                }
+            }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('Server live'));                    <label>Stability (Expression)</label>
                     <span class="slider-value" id="stabilityVal">50%</span>
                 </div>
                 <input type="range" id="stabilitySlider" min="0" max="100" value="50" oninput="document.getElementById('stabilityVal').innerText = this.value + '%'">
