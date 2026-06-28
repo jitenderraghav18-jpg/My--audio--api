@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Neural Voice Studio</title>
+        <title>Neural Voice Studio Pro</title>
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
@@ -167,19 +167,18 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>Neural Voice Studio</h1>
+            <h1>Neural Voice Studio Pro</h1>
             <div class="subtitle">Transform text into lifelike speech instantly</div>
             
             <div class="form-group">
                 <label>Script</label>
-                <textarea id="scriptInput">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar, khush aur oorja se bharpoor honge!</textarea>
+                <textarea id="scriptInput">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar aur oorja se bharpoor honge!</textarea>
             </div>
             
             <div class="form-group">
                 <label>Voice Model</label>
                 <select id="voiceModel">
-                    <option value="hi-IN">Monklia (Hindi Premium)</option>
-                    <option value="en-US">Rachel (English Custom)</option>
+                    <option value="">Loading Premium Models...</option>
                 </select>
             </div>
             
@@ -232,6 +231,48 @@ app.get('/', (req, res) => {
 
         <script>
             let currentUtterance = null;
+            let allVoices = [];
+
+            // Dynamically load ALL available device voices
+            function loadVoices() {
+                allVoices = window.speechSynthesis.getVoices();
+                const voiceSelect = document.getElementById('voiceModel');
+                voiceSelect.innerHTML = '';
+
+                // Filter for Hindi (hi) and English (en) options
+                const targetedVoices = allVoices.filter(v => v.lang.startsWith('hi') || v.lang.startsWith('en'));
+
+                if(targetedVoices.length === 0) {
+                    // Fallback if list is empty initially
+                    const opt = document.createElement('option');
+                    opt.value = 'hi-IN';
+                    opt.innerText = 'Default Hindi (Standard)';
+                    voiceSelect.appendChild(opt);
+                    return;
+                }
+
+                targetedVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    
+                    // Simple Gender/Type styling for visibility
+                    let labelName = voice.name.replace('Google', '').trim();
+                    if(voice.lang.startsWith('hi')) {
+                        labelName = '🇮🇳 Hindi - ' + labelName;
+                    } else {
+                        labelName = '🇬🇧 English - ' + labelName;
+                    }
+
+                    option.innerText = labelName;
+                    voiceSelect.appendChild(option);
+                });
+            }
+
+            // Web Speech API asynchronously loads voices
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+            window.onload = loadVoices;
 
             function generateNeuralAudio() {
                 const text = document.getElementById('scriptInput').value.trim();
@@ -240,7 +281,6 @@ app.get('/', (req, res) => {
                     return; 
                 }
                 
-                // Stop any ongoing speech
                 window.speechSynthesis.cancel();
                 
                 const btn = document.getElementById('submitBtn');
@@ -252,15 +292,19 @@ app.get('/', (req, res) => {
                 
                 currentUtterance = new SpeechSynthesisUtterance(text);
                 
-                // Voice configuration based on choice
-                const modelSelection = document.getElementById('voiceModel').value;
-                currentUtterance.lang = modelSelection;
+                // Fetch selected voice object
+                const selectedIndex = document.getElementById('voiceModel').value;
+                const targetedVoices = allVoices.filter(v => v.lang.startsWith('hi') || v.lang.startsWith('en'));
                 
-                // Real Slider Adjustments mapping
+                if(targetedVoices[selectedIndex]) {
+                    currentUtterance.voice = targetedVoices[selectedIndex];
+                } else {
+                    currentUtterance.lang = 'hi-IN';
+                }
+                
                 const speedRate = document.getElementById('speedSlider').value / 100;
-                currentUtterance.rate = speedRate; // Real speed control
+                currentUtterance.rate = speedRate; 
                 
-                // Stability simulation via pitch shift
                 const stability = document.getElementById('stabilitySlider').value;
                 currentUtterance.pitch = 0.8 + (stability / 250); 
 
@@ -271,13 +315,11 @@ app.get('/', (req, res) => {
                 };
 
                 currentUtterance.onerror = function(e) {
-                    alert('Speech processing failed. Dobara try karein.');
                     btn.disabled = false;
                     btn.innerText = 'Generate Audio';
                     audioBlock.style.display = 'none';
                 };
 
-                // Play the audio instantly
                 window.speechSynthesis.speak(currentUtterance);
             }
 
