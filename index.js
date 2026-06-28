@@ -73,7 +73,6 @@ app.get('/', (req, res) => {
                 box-sizing: border-box; 
                 resize: none;
                 line-height: 1.6;
-                transition: border 0.2s;
             }
             textarea:focus {
                 border-color: #9256ff;
@@ -89,16 +88,12 @@ app.get('/', (req, res) => {
                 font-size: 13px; 
                 box-sizing: border-box;
                 cursor: pointer;
-                appearance: none;
             }
             .slider-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 margin-bottom: 8px;
-            }
-            .slider-header label {
-                margin-bottom: 0;
             }
             .slider-value {
                 font-size: 12px;
@@ -113,7 +108,6 @@ app.get('/', (req, res) => {
                 border-radius: 10px; 
                 appearance: none; 
                 cursor: pointer;
-                margin: 6px 0;
             }
             .slider-subtexts {
                 display: flex;
@@ -123,7 +117,6 @@ app.get('/', (req, res) => {
                 text-transform: uppercase;
                 margin-top: 4px;
                 font-weight: 600;
-                letter-spacing: 0.5px;
             }
             button { 
                 width: 100%; 
@@ -137,18 +130,11 @@ app.get('/', (req, res) => {
                 cursor: pointer; 
                 margin-top: 10px;
                 box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-                transition: all 0.2s;
-            }
-            button:hover { 
-                opacity: 0.95;
-                transform: translateY(-1px);
             }
             button:disabled { 
                 background: #252244; 
                 color: #535175;
                 cursor: not-allowed; 
-                box-shadow: none;
-                transform: none;
             }
             .audio-box { 
                 margin-top: 24px; 
@@ -157,11 +143,25 @@ app.get('/', (req, res) => {
                 border-radius: 14px; 
                 border: 1px solid rgba(255, 255, 255, 0.05); 
                 display: none; 
+                text-align: center;
             }
-            audio { 
-                width: 100%; 
-                height: 40px;
+            .playing-ui {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #1e1b3a;
+                padding: 10px 14px;
+                border-radius: 8px;
                 margin-top: 8px;
+            }
+            .stop-btn {
+                background: #ff4d4d;
+                padding: 6px 12px;
+                font-size: 11px;
+                border-radius: 6px;
+                width: auto;
+                margin: 0;
+                box-shadow: none;
             }
         </style>
     </head>
@@ -172,7 +172,7 @@ app.get('/', (req, res) => {
             
             <div class="form-group">
                 <label>Script</label>
-                <textarea id="scriptInput" placeholder="Yahan apna script text enter karein...">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar, khush aur oorja se bharpoor honge!</textarea>
+                <textarea id="scriptInput">Aap sabhi ka dil se swagat hai. Umeed hai aap sab shaandar, khush aur oorja se bharpoor honge!</textarea>
             </div>
             
             <div class="form-group">
@@ -180,7 +180,6 @@ app.get('/', (req, res) => {
                 <select id="voiceModel">
                     <option value="hi-IN">Monklia (Hindi Premium)</option>
                     <option value="en-US">Rachel (English Custom)</option>
-                    <option value="hi-IN-male">Aditya (Hindi Male)</option>
                 </select>
             </div>
             
@@ -213,61 +212,82 @@ app.get('/', (req, res) => {
                     <label>Speed</label>
                     <span class="slider-value" id="speedVal">1.00x</span>
                 </div>
-                <input type="range" id="speedSlider" min="70" max="125" value="100" oninput="document.getElementById('speedVal').innerText = (this.value/100).toFixed(2) + 'x'">
+                <input type="range" id="speedSlider" min="50" max="150" value="100" oninput="document.getElementById('speedVal').innerText = (this.value/100).toFixed(2) + 'x'">
                 <div class="slider-subtexts">
-                    <span>Slower (0.7x)</span>
-                    <span>Faster (1.25x)</span>
+                    <span>Slower (0.5x)</span>
+                    <span>Faster (1.5x)</span>
                 </div>
             </div>
             
             <button id="submitBtn" onclick="generateNeuralAudio()">Generate Audio</button>
             
             <div class="audio-box" id="audioPlaybackBlock">
-                <label style="color: #b380ff;">Generated Master Track</label>
-                <audio id="coreAudioPlayer" controls></audio>
+                <label style="color: #b380ff; display:block; text-align:left;">Speech Control</label>
+                <div class="playing-ui">
+                    <span id="statusLabel" style="font-size:13px; color:#a3a1cc;">🔊 Playing Audio Track...</span>
+                    <button class="stop-btn" onclick="stopAudio()">Stop</button>
+                </div>
             </div>
         </div>
 
         <script>
+            let currentUtterance = null;
+
             function generateNeuralAudio() {
                 const text = document.getElementById('scriptInput').value.trim();
                 if(!text) { 
-                    alert('Bhai, text box khali hai! Kuch type toh karo.'); 
+                    alert('Bhai, text box khali hai!'); 
                     return; 
                 }
                 
+                // Stop any ongoing speech
+                window.speechSynthesis.cancel();
+                
                 const btn = document.getElementById('submitBtn');
                 const audioBlock = document.getElementById('audioPlaybackBlock');
-                const player = document.getElementById('coreAudioPlayer');
                 
                 btn.disabled = true;
                 btn.innerText = 'Synthesizing Neural Track...';
-                
-                const modelSelection = document.getElementById('voiceModel').value;
-                const speedRate = document.getElementById('speedSlider').value / 100;
-                
-                let langCode = modelSelection.includes('en') ? 'en' : 'hi';
-                // Direct high-speed endpoint mapping bypasses Vercel 10s Serverless limitation completely
-                const audioUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=' + langCode + '&client=tw-ob&q=' + encodeURIComponent(text);
-                
-                player.src = audioUrl;
                 audioBlock.style.display = 'block';
                 
-                player.defaultPlaybackRate = speedRate;
-                player.playbackRate = speedRate;
-                player.load();
+                currentUtterance = new SpeechSynthesisUtterance(text);
                 
-                player.oncanplaythrough = function() {
-                    player.play();
+                // Voice configuration based on choice
+                const modelSelection = document.getElementById('voiceModel').value;
+                currentUtterance.lang = modelSelection;
+                
+                // Real Slider Adjustments mapping
+                const speedRate = document.getElementById('speedSlider').value / 100;
+                currentUtterance.rate = speedRate; // Real speed control
+                
+                // Stability simulation via pitch shift
+                const stability = document.getElementById('stabilitySlider').value;
+                currentUtterance.pitch = 0.8 + (stability / 250); 
+
+                currentUtterance.onend = function() {
                     btn.disabled = false;
                     btn.innerText = 'Generate Audio';
+                    audioBlock.style.display = 'none';
                 };
 
-                player.onerror = function() {
-                    alert('Audio build error. Ek baar text chota karke check karein!');
+                currentUtterance.onerror = function(e) {
+                    alert('Speech processing failed. Dobara try karein.');
                     btn.disabled = false;
                     btn.innerText = 'Generate Audio';
+                    audioBlock.style.display = 'none';
                 };
+
+                // Play the audio instantly
+                window.speechSynthesis.speak(currentUtterance);
+            }
+
+            function stopAudio() {
+                window.speechSynthesis.cancel();
+                const btn = document.getElementById('submitBtn');
+                const audioBlock = document.getElementById('audioPlaybackBlock');
+                btn.disabled = false;
+                btn.innerText = 'Generate Audio';
+                audioBlock.style.display = 'none';
             }
         </script>
     </body>
@@ -279,5 +299,5 @@ module.exports = app;
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is active on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
